@@ -16,9 +16,18 @@ const currentYear = new Date().getFullYear();
 const startDate = `${currentYear}-01-01T00:00:00`;
 const endDate = `${currentYear}-12-31T23:59:59`;
 
-const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
+const ShortenItem = ({
+        originalUrl,
+        shortUrl,
+        clickCount,
+        createdDate,
+        qrCodePath,
+        expiresAt
+        }) => {
+
+            console.log("QR Path:", qrCodePath);
     const { token } = useStoreContext();
-    const navigate = useNavigate();
+    const navigate = useNavigate(); 
     const [isCopied, setIsCopied] = useState(false);
     const [analyticToggle, setAnalyticToggle] = useState(false);
     const [loader, setLoader] = useState(false);
@@ -69,6 +78,10 @@ const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
         }
     }, [selectedUrl]);
 
+        const isExpired =
+        expiresAt &&
+        new Date(expiresAt) < new Date();
+
   return (
     <div className={`bg-slate-100 shadow-lg border border-dotted  border-slate-500 px-6 sm:py-1 py-3 rounded-md  transition-all duration-100 `}>
     <div className={`flex sm:flex-row flex-col  sm:justify-between w-full sm:gap-0 gap-5 py-5 `}>
@@ -90,12 +103,52 @@ const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdDate }) => {
             </div>
 
         <div className="flex items-center gap-1 ">
-            <h3 className=" text-slate-700 font-[400] text-[17px] ">
-              {originalUrl}
-            </h3>
-          </div>
+                    <h3 className=" text-slate-700 font-[400] text-[17px] ">
+                    {originalUrl}
+                    </h3>
+                </div>
 
-          <div className="flex   items-center gap-8 pt-6 ">
+                {qrCodePath && (
+                <div className="mt-3">
+                    <img
+                        src={`${import.meta.env.VITE_BACKEND_URL}/${qrCodePath}`}
+                        alt="QR Code"
+                        className="w-24 h-24 border rounded-md"
+                    />
+                    <a
+                        href={`${import.meta.env.VITE_BACKEND_URL}/${qrCodePath}`}
+                        download
+                        target="_blank"
+                        className="text-xs text-blue-600 mt-1 block"
+                    >
+                        Download QR
+                    </a>
+                </div>
+                )}
+                {expiresAt && (
+                <div className="flex items-center gap-3 mt-3">
+                    <span
+                    className={`px-3 py-1 rounded-full text-white text-sm ${
+                        isExpired
+                        ? "bg-red-500"
+                        : "bg-green-500"
+                    }`}
+                    >
+                    {isExpired
+                        ? "Expired"
+                        : "Active"}
+                    </span>
+                </div>
+                )}
+                {expiresAt && (
+                <p className="text-sm text-gray-500 mt-2">
+                    Expires:
+                    {" "}
+                    {new Date(expiresAt)
+                    .toLocaleDateString()}
+                </p>
+                )}
+                <div className="flex items-center gap-8 pt-6 ">
             <div className="flex gap-1  items-center font-semibold  text-green-800">
               <span>
                 <MdOutlineAdsClick className="text-[22px] me-1" />

@@ -20,13 +20,17 @@ const CreateNewShorten = ({ setOpen, refetch }) => {
   } = useForm({
     defaultValues: {
       originalUrl: "",
+      customAlias: "",
+      expiresAt: "",
     },
     mode: "onTouched",
   });
 
   const createShortUrlHandler = async (data) => {
+    
     setLoading(true);
     try {
+      console.log(data);
         const { data: res } = await api.post("/api/urls/shorten", data, {
             headers: {
               "Content-Type": "application/json",
@@ -76,6 +80,22 @@ const CreateNewShorten = ({ setOpen, refetch }) => {
             placeholder="https://example.com"
             type="url"
             message="Url is required"
+            register={register}
+            errors={errors}
+          />
+
+          <TextField
+            label="Custom Alias (Optional)"
+            id="customAlias"
+            placeholder="github-pritam"
+            type="text"
+            register={register}
+            errors={errors}
+          />
+          <TextField
+            label="Expiry Date (Optional)"
+            id="expiresAt"
+            type="datetime-local"
             register={register}
             errors={errors}
           />
