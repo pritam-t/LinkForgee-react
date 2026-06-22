@@ -18,8 +18,40 @@ const DashboardLayout = () => {
     // console.log(useFetchTotalClicks(token, onError));
 
     const {isLoading, data: myShortenUrls, refetch } = useFetchMyShortUrls(token, onError)
+
+    const totalUrls = myShortenUrls?.length || 0;
+
+    const totalClicksCount =
+      myShortenUrls?.reduce(
+        (sum, url) => sum + url.clickCount,
+        0
+      ) || 0;
+
+    const activeUrls =
+      myShortenUrls?.filter(
+        (url) =>
+          !url.expiresAt ||
+          new Date(url.expiresAt) > new Date()
+      ).length || 0;
+
+    const expiredUrls =
+      myShortenUrls?.filter(
+        (url) =>
+          url.expiresAt &&
+          new Date(url.expiresAt) <= new Date()
+      ).length || 0;
+
+      const mostPopularUrl =
+        myShortenUrls?.reduce(
+          (max, url) =>
+            url.clickCount > (max?.clickCount || 0)
+              ? url
+              : max,
+          null
+        );
     
     const {isLoading: loader, data: totalClicks} = useFetchTotalClicks(token, onError)
+    console.log("Total Clicks API:", totalClicks);
 
     function onError() {
       navigate("/error");
@@ -31,8 +63,64 @@ const DashboardLayout = () => {
             <Loader />
         ): ( 
         <div className="lg:w-[90%] w-full mx-auto py-16">
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+
+            <div className="bg-white shadow rounded-lg p-5">
+              <h3 className="text-gray-500 text-sm">
+                Total URLs
+              </h3>
+              <p className="text-3xl font-bold">
+                {totalUrls}
+              </p>
+            </div>
+
+            <div className="bg-white shadow rounded-lg p-5">
+              <h3 className="text-gray-500 text-sm">
+                Total Clicks
+              </h3>
+              <p className="text-3xl font-bold text-green-600">
+                {totalClicksCount}
+              </p>
+            </div>
+
+            <div className="bg-white shadow rounded-lg p-5">
+              <h3 className="text-gray-500 text-sm">
+                Active URLs
+              </h3>
+              <p className="text-3xl font-bold text-blue-600">
+                {activeUrls}
+              </p>
+            </div>
+
+            <div className="bg-white shadow rounded-lg p-5">
+              <h3 className="text-gray-500 text-sm">
+                Expired URLs
+              </h3>
+              <p className="text-3xl font-bold text-red-600">
+                {expiredUrls}
+              </p>
+            </div>
+
+          </div>
+
+            {mostPopularUrl && (
+              <div className="bg-gradient-to-r from-blue-500 to-blue-500 text-white rounded-xl shadow-lg p-6 mb-10">
+                  <h2 className="text-lg font-semibold">
+                      Most Popular URL
+                  </h2>
+
+                  <p className="text-2xl font-bold mt-2">
+                      {mostPopularUrl.shortUrl}
+                  </p>
+
+                  <p className="text-sm opacity-90">
+                      {mostPopularUrl.clickCount} clicks
+                  </p>
+              </div>
+            )}
             <div className=" h-96 relative ">
-                {totalClicks.length === 0 && (
+                {!loader && totalClicks?.length === 0 &&  (
                      <div className="absolute flex flex-col  justify-center sm:items-center items-end  w-full left-0 top-0 bottom-0 right-0 m-auto">
                      <h1 className=" text-slate-800 font-serif sm:text-2xl text-[18px] font-bold mb-1">
                        No Data For This Time Period
@@ -64,7 +152,10 @@ const DashboardLayout = () => {
                   </div>
               </div>
               ) : (
-                  <ShortenUrlList data={myShortenUrls} />
+                  <ShortenUrlList
+                      data={myShortenUrls}
+                      refetch={refetch}
+                  />
               )}
             </div>
         </div>

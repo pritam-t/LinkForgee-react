@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStoreContext } from '../../contextApi/ContextApi';
 import { Hourglass } from 'react-loader-spinner';
 import Graph from './Graph';
+import { MdDelete } from "react-icons/md";
 
 const currentYear = new Date().getFullYear();
 
@@ -17,12 +18,14 @@ const startDate = `${currentYear}-01-01T00:00:00`;
 const endDate = `${currentYear}-12-31T23:59:59`;
 
 const ShortenItem = ({
+        id,
         originalUrl,
         shortUrl,
         clickCount,
         createdDate,
         qrCodePath,
-        expiresAt
+        expiresAt,
+        refetch
         }) => {
 
             console.log("QR Path:", qrCodePath);
@@ -33,6 +36,7 @@ const ShortenItem = ({
     const [loader, setLoader] = useState(false);
     const [selectedUrl, setSelectedUrl] = useState("");
     const [analyticsData, setAnalyticsData] = useState([]);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const subDomain = import.meta.env.VITE_REACT_FRONT_END_URL.replace(
         /^https?:\/\//,
@@ -45,6 +49,26 @@ const ShortenItem = ({
         }
         setAnalyticToggle(!analyticToggle);
     }
+        const deleteHandler = async () => {
+            try {
+
+                await api.delete(
+                    `/api/urls/${id}`,
+                    {
+                        headers: {
+                            Authorization:
+                                "Bearer " + token,
+                        },
+                    }
+                );
+
+                refetch();
+                setShowDeleteModal(false);
+
+            } catch(error) {
+                console.log(error);
+            }
+        };
 
     const fetchMyShortUrl = async () => {
         setLoader(true);
@@ -170,29 +194,63 @@ const ShortenItem = ({
             </div>
         </div>
 
-        <div className="flex  flex-1  sm:justify-end items-center gap-4">
-            <CopyToClipboard
-                onCopy={() => setIsCopied(true)}
-                text={`${import.meta.env.VITE_REACT_FRONT_END_URL + "/s/" + `${shortUrl}`}`}
-            >
-                <div className="flex cursor-pointer gap-1 items-center bg-btnColor py-2  font-semibold shadow-md shadow-slate-500 px-6 rounded-md text-white ">
-                <button className="">{isCopied ? "Copied" : "Copy"}</button>
-                {isCopied ? (
-                    <LiaCheckSolid className="text-md" />
-                ) : (
-                    <IoCopy className="text-md" />
-                )}
-                </div>
-            </CopyToClipboard>
+            <div className="flex flex-col gap-3">
 
-            <div
-                onClick={() => analyticsHandler(shortUrl)}
-                className="flex cursor-pointer gap-1 items-center bg-rose-700 py-2 font-semibold shadow-md shadow-slate-500 px-6 rounded-md text-white "
-            >
-                <button>Analytics</button>
-                <MdAnalytics className="text-md" />
-          </div>
-          </div>
+                <div className="flex gap-3">
+
+                    {/* Copy Button */}
+                    <CopyToClipboard
+                        onCopy={() => setIsCopied(true)}
+                        text={`${import.meta.env.VITE_REACT_FRONT_END_URL + "/s/" + `${shortUrl}`}`}
+                    >
+                        <div className="flex cursor-pointer gap-1 items-center bg-btnColor py-2 font-semibold shadow-md shadow-slate-500 px-6 rounded-md text-white">
+                            <button>
+                                {isCopied ? "Copied" : "Copy"}
+                            </button>
+                            {isCopied
+                                ? <LiaCheckSolid />
+                                : <IoCopy />
+                            }
+                        </div>
+                    </CopyToClipboard>
+
+                    {/* Analytics */}
+                    <div
+                        onClick={() =>
+                            analyticsHandler(shortUrl)
+                        }
+                        className="flex cursor-pointer gap-1 items-center bg-rose-700 py-2 font-semibold shadow-md shadow-slate-500 px-6 rounded-md text-white"
+                    >
+                        <button>Analytics</button>
+                        <MdAnalytics />
+                    </div>
+
+                </div>
+
+                <div className="flex gap-3 justify-end">
+
+                    {/* Future Update Button */}
+
+                    <div
+                        className="flex cursor-pointer gap-1 items-center bg-blue-600 py-2 font-semibold shadow-md shadow-slate-500 px-6 rounded-md text-white"
+                    >
+                        <button>Update</button>
+                    </div>
+
+                    {/* Delete Button */}
+
+                    <div
+                        onClick={() =>
+                            setShowDeleteModal(true)
+                        }
+                        className="flex cursor-pointer gap-1 items-center bg-red-600 py-2 font-semibold shadow-md shadow-slate-500 px-6 rounded-md text-white"
+                    >
+                        <button>Delete</button>
+                    </div>
+
+                </div>
+
+            </div>
         </div>
     <React.Fragment>
         <div className={`${
@@ -225,11 +283,74 @@ const ShortenItem = ({
                             </h3>
                         </div>
                     )}
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+
+                <div className="bg-slate-100 p-4 rounded">
+                    <p className="text-gray-500">
+                        Total Clicks
+                    </p>
+
+                    <p className="text-2xl font-bold">
+                        {clickCount}
+                    </p>
+                </div>
+
+                <div className="bg-slate-100 p-4 rounded">
+                    <p className="text-gray-500">
+                        Created
+                    </p>
+
+                    <p className="font-semibold">
+                        {dayjs(createdDate).format(
+                            "DD MMM YYYY"
+                        )}
+                    </p>
+                </div>
+
+                </div>
                         <Graph graphData={analyticsData} />
                     </>
                     )}
         </div>
     </React.Fragment>
+
+    {showDeleteModal && (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+        <div className="bg-white rounded-xl p-6 w-[350px] shadow-xl">
+
+            <h2 className="text-lg font-semibold mb-3">
+                Delete URL?
+            </h2>
+
+            <p className="text-gray-600 mb-5">
+                This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end gap-3">
+
+                <button
+                    onClick={() =>
+                        setShowDeleteModal(false)
+                    }
+                    className="px-4 py-2 rounded border"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    onClick={deleteHandler}
+                    className="px-4 py-2 rounded bg-red-600 text-white"
+                >
+                    Delete
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+)}
     </div>
   )
 }
